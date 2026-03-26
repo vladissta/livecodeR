@@ -1,4 +1,83 @@
-var ws = new WebSocket("ws://"+window.location.host);
+var wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+var ws = null;
+var wsConnected = false;
+var pollingActive = false;
+var pollTimer = null;
+
+function renderState(obj) {
+  var need_update = false;
+
+  draw_pb(obj.interval);
+
+  if (obj.selection) {
+    if (typeof Prism != "undefined") {
+      var cur = document.getElementsByTagName("pre")[0].getAttribute("data-line");
+      if (cur != obj.selection) {
+        document.getElementsByTagName("pre")[0].setAttribute("data-line", obj.selection);
+        need_update = true;
+      }
+    }
+  }
+
+  if (obj.messages) {
+    for (var m of obj.messages) {
+      new Noty(m).show();
+    }
+  }
+
+  if (obj.content) {
+    var code = obj.content.replace(/</g, "&lt;");
+    document.getElementsByTagName("code")[0].innerHTML = code;
+
+    need_update = true;
+  }
+
+  if (need_update) {
+    document.querySelectorAll("pre code").forEach((block) => {
+      if (typeof hljs != "undefined") {
+        hljs.highlightBlock(block);
+        hljs.lineNumbersBlock(block);
+      }
+      if (typeof Prism != "undefined") {
+        Prism.highlightElement(block);
+      }
+    });
+  }
+}
+
+function schedulePoll(intervalSeconds) {
+  if (!pollingActive) {
+    return;
+  }
+
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(fetchState, intervalSeconds * 1000);
+}
+
+function fetchState() {
+  if (!pollingActive) {
+    return;
+  }
+
+  fetch("/__livecode__/poll", { cache: "no-store" })
+    .then((response) => response.json())
+    .then((obj) => {
+      renderState(obj);
+      schedulePoll(obj.interval || 2);
+    })
+    .catch(() => {
+      schedulePoll(2);
+    });
+}
+
+function startPolling() {
+  if (pollingActive) {
+    return;
+  }
+
+  pollingActive = true;
+  fetchState();
+}
 
 draw_pb = function(interval) {
   var pb = document.getElementById('progressbar');
@@ -45,49 +124,36 @@ draw_timer = function(duration, color) {
   }).animate(1.0);
 };
 
+function connectWebSocket() {
+  ws = new WebSocket(wsProtocol + window.location.host);
 
+  ws.onopen = function() {
+    wsConnected = true;
+  };
 
-ws.onmessage = function(msg) {
-  var obj = JSON.parse(msg.data);
-  var need_update = false;
+  ws.onmessage = function(msg) {
+    renderState(JSON.parse(msg.data));
+  };
 
-  draw_pb(obj.interval);
+  ws.onerror = function() {
+    startPolling();
+  };
 
-  if (obj.selection) {
-    if (typeof Prism != "undefined") {
-      var cur = document.getElementsByTagName("pre")[0].getAttribute("data-line");
-      if (cur != obj.selection) {
-        document.getElementsByTagName("pre")[0].setAttribute("data-line", obj.selection);
-        need_update = true;
-      }
+  ws.onclose = function() {
+    if (!pollingActive) {
+      startPolling();
     }
-  }
+  };
 
-  if (obj.messages) {
-    //document.getElementById("debug").innerHTML += JSON.stringify( obj.messages );
-    //document.getElementById("debug").innerHTML += "\n\n";
-    for(var m of obj.messages) {
-      new Noty(m).show();
+  setTimeout(function() {
+    if (!wsConnected && !pollingActive) {
+      try {
+        ws.close();
+      } catch (e) {
+      }
+      startPolling();
     }
-  }
+  }, 1500);
+}
 
-  if (obj.content) {
-    var code = obj.content.replace(/</g,"&lt;");
-    document.getElementsByTagName("code")[0].innerHTML = code;
-
-    need_update = true;
-  }
-
-  if (need_update) {
-    document.querySelectorAll('pre code').forEach((block) => {
-      if (typeof hljs  != "undefined") {
-        hljs.highlightBlock(block);
-        hljs.lineNumbersBlock(block);
-      }
-      if (typeof Prism != "undefined") {
-        Prism.highlightElement(block);
-      }
-    });
-  }
-};
-
+connectWebSocket();

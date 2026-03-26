@@ -32,8 +32,8 @@ remotes::install_github("rundel/livecode")
 ``` r
 # From RStudio with an open R script
 server = livecode::serve_file()
-#> ✔ Started sharing 'example.R' at 'http://192.168.1.128:30000'.
-#> ✖ The current ip address ('192.168.1.128') for the server is private, only users on the same local network are likely to be able to connect.
+#> ✔ Started sharing 'example.R' at 'http://127.0.0.1:30000'.
+#> i Server is listening on all interfaces. For a public tunnel, set `public_url=` to your ngrok URL.
 
 # Once started, send messages to your users.
 server$send_msg("Hello World!", type = "success")
@@ -41,7 +41,16 @@ server$send_msg("Oh no!\n\n Something bad has happened.", type = "error")
 
 # Once finished, shut the server down.
 server$stop()
-#> ✔ Stopped server at 'http://192.168.1.128:30000'.
+#> ✔ Stopped server at 'http://127.0.0.1:30000'.
+```
+
+For ngrok, bind locally and advertise the tunneled URL:
+
+``` r
+server = livecode::serve_file(
+  port = 3000,
+  public_url = "https://my-session.ngrok-free.app"
+)
 ```
 
 ## Using bitly

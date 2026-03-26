@@ -11,13 +11,14 @@ serve_file(
   interval = 1,
   bitly = FALSE,
   auto_save = TRUE,
-  open_browser = TRUE
+  open_browser = TRUE,
+  public_url = NULL
 )
 }
 \arguments{
 \item{file}{Path to file to broadcast.}
 
-\item{ip}{ip of the server, defaults to the top result of `network_interfaces`.}
+\item{ip}{ip address to bind the server to, defaults to `0.0.0.0`.}
 
 \item{port}{port of the server, defaults to a random value.}
 
@@ -28,6 +29,8 @@ serve_file(
 \item{auto_save}{should the broadcast file be auto saved during each update tic.}
 
 \item{open_browser}{should a browser session be opened.}
+
+\item{public_url}{public URL to advertise to viewers, e.g. an ngrok URL.}
 }
 \description{
 Create a livecode server for broadcasting a file

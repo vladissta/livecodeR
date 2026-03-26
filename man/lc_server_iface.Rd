@@ -43,7 +43,8 @@ Creates a new livecode server
   interval = 2,
   bitly = FALSE,
   auto_save = TRUE,
-  open_browser = TRUE
+  open_browser = TRUE,
+  public_url = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -52,7 +53,7 @@ Creates a new livecode server
 \describe{
 \item{\code{file}}{Path to file to broadcast.}
 
-\item{\code{ip}}{ip of the server, defaults to the top result of `network_interfaces`.}
+\item{\code{ip}}{ip address to bind the server to, defaults to `0.0.0.0`.}
 
 \item{\code{port}}{port of the server, defaults to a random value.}
 
@@ -63,6 +64,8 @@ Creates a new livecode server
 \item{\code{auto_save}}{should the broadcast file be auto saved update tic.}
 
 \item{\code{open_browser}}{should a browser session be opened.}
+
+\item{\code{public_url}}{public URL to advertise to viewers, e.g. an ngrok URL.}
 }
 \if{html}{\out{</div>}}
 }

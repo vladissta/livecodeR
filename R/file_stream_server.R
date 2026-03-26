@@ -55,35 +55,49 @@ file_stream_server = function(host, port, file, file_id, interval = 3, template 
 
   websockets = new.env(parent = emptyenv())
 
-  websocket_loop = function() {
-    if (!server$isRunning())
-      return()
+  current_selection = function() {
+    if (!is_rstudio()) {
+      return(NULL)
+    }
 
+    ctx = rstudioapi::getSourceEditorContext()
+    open_file = path.expand(ctx[["path"]])
+
+    if (file != open_file) {
+      return(NULL)
+    }
+
+    extract_line_nums(ctx[["selection"]])
+  }
+
+  build_state = function(always_content = FALSE, include_messages = TRUE) {
     if (is_rstudio() & !is.null(file_id)) {
       rstudioapi::documentSave(file_id)
     }
 
     msg = list(interval = interval)
-    if (file_cache$need_update())
+
+    if (always_content || file_cache$need_update()) {
       msg[["content"]] = file_cache$content
-
-    if (server$have_msgs()) {
-      msgs = purrr::map(server$get_msgs(), ~ .$get_msg())
-
-      msg[["messages"]] = msgs
     }
 
-    if (is_rstudio()) {
-      ctx = rstudioapi::getSourceEditorContext()
-      open_file = path.expand(ctx[["path"]])
-
-      if (file == open_file) {
-        ln = extract_line_nums(ctx[["selection"]])
-        msg[["selection"]] = ln
-      }
+    if (include_messages && server$have_msgs()) {
+      msg[["messages"]] = purrr::map(server$get_msgs(), ~ .$get_msg())
     }
 
-    msg = jsonlite::toJSON(msg, auto_unbox = TRUE)
+    selection = current_selection()
+    if (!is.null(selection)) {
+      msg[["selection"]] = selection
+    }
+
+    msg
+  }
+
+  websocket_loop = function() {
+    if (!server$isRunning())
+      return()
+
+    msg = jsonlite::toJSON(build_state(), auto_unbox = TRUE)
 
     for(ws_id in names(websockets)) {
       websockets[[ws_id]]$send(msg)
@@ -94,6 +108,20 @@ file_stream_server = function(host, port, file, file_id, interval = 3, template 
 
   app = list(
     call = function(req) {
+      if (identical(req$PATH_INFO, "/__livecode__/poll")) {
+        return(list(
+          status = 200L,
+          headers = list(
+            "Content-Type" = "application/json; charset=UTF-8",
+            "Cache-Control" = "no-store, max-age=0"
+          ),
+          body = jsonlite::toJSON(
+            build_state(always_content = TRUE, include_messages = FALSE),
+            auto_unbox = TRUE
+          )
+        ))
+      }
+
       list(
         status = 200L,
         headers = list(
@@ -115,11 +143,10 @@ file_stream_server = function(host, port, file, file_id, interval = 3, template 
       )
 
       ## Send initial message with current file contents
-      msg = list(
-        interval = interval,
-        content = file_cache$content
-      )
-      ws$send(jsonlite::toJSON(msg, auto_unbox = TRUE))
+      ws$send(jsonlite::toJSON(
+        build_state(always_content = TRUE),
+        auto_unbox = TRUE
+      ))
 
       if (as.integer(ws_id) == 1)
         websocket_loop()
@@ -153,6 +180,7 @@ lc_server_iface = R6::R6Class(
     file_id = NULL,
     ip = NULL,
     port = NULL,
+    public_url = NULL,
     template = NULL,
     interval = NULL,
     bitly_url = NULL,
@@ -195,7 +223,7 @@ lc_server_iface = R6::R6Class(
 
     init_ip = function(ip) {
       if (missing(ip)) {
-        ip = network_interfaces()[["ip"]][1]
+        ip = "0.0.0.0"
 
         #usethis::ui_info( c(
         #  "No ip address provided, using {usethis::ui_value(ip)}",
@@ -212,9 +240,32 @@ lc_server_iface = R6::R6Class(
       private$ip = ip
     },
 
+    init_public_url = function(public_url) {
+      if (missing(public_url) || is.null(public_url) || identical(public_url, "")) {
+        private$public_url = NULL
+        return()
+      }
+
+      public_url = as.character(public_url)
+
+      if (length(public_url) != 1) {
+        usethis::ui_stop("`public_url` must be a single URL string.")
+      }
+
+      private$public_url = public_url
+    },
+
     init_port = function(port) {
       if (missing(port)) {
-        port = httpuv::randomPort(host = private$ip)
+        port_host = if (private$ip == "0.0.0.0") "127.0.0.1" else private$ip
+        candidates = sample(1024:49151, size = 1000)
+        matches = purrr::keep(candidates, ~ port_available(port_host, .x))
+
+        if (length(matches) == 0) {
+          usethis::ui_stop("Unable to find an available port.")
+        }
+
+        port = matches[[1]]
         #usethis::ui_info( paste(
         #  "No port provided, using port {usethis::ui_value(port)}."
         #))
@@ -271,13 +322,16 @@ lc_server_iface = R6::R6Class(
     #' @param bitly should a bitly bit link be created for the server.
     #' @param auto_save should the broadcast file be auto saved update tic.
     #' @param open_browser should a browser session be opened.
+    #' @param public_url public URL to advertise to viewers, e.g. an ngrok URL.
     initialize = function(
       file, ip, port, interval = 2,
-      bitly = FALSE, auto_save = TRUE, open_browser = TRUE
+      bitly = FALSE, auto_save = TRUE, open_browser = TRUE,
+      public_url = NULL
     ) {
       private$init_file(file, auto_save)
       private$init_ip(ip)
       private$init_port(port)
+      private$init_public_url(public_url)
 
       private$template = "prism"
       private$interval = interval
@@ -376,6 +430,13 @@ lc_server_iface = R6::R6Class(
         "at {usethis::ui_value(self$url)}."
       ) )
 
+      if (private$ip == "0.0.0.0" && is.null(private$public_url)) {
+        usethis::ui_info( paste(
+          "Server is listening on all interfaces.",
+          "For a public tunnel, set {usethis::ui_code('public_url=')} to your ngrok URL."
+        ) )
+      }
+
       if (is_ip_private(private$ip)) {
         usethis::ui_oops( paste(
           "The current ip address ({usethis::ui_value(private$ip)}) for the server is private,",
@@ -423,6 +484,10 @@ lc_server_iface = R6::R6Class(
     url = function() {
       if (!is.null(private$bitly_url))
         private$bitly_url
+      else if (!is.null(private$public_url))
+        private$public_url
+      else if (private$ip == "0.0.0.0")
+        glue::glue("http://127.0.0.1:{private$port}")
       else
         glue::glue("http://{private$ip}:{private$port}")
     },
@@ -442,16 +507,18 @@ lc_server_iface = R6::R6Class(
 #' @param bitly should a bitly bit link be created for the server.
 #' @param auto_save should the broadcast file be auto saved during each update tic.
 #' @param open_browser should a browser session be opened.
+#' @param public_url public URL to advertise to viewers, e.g. an ngrok URL.
 #'
 #' @export
 
 serve_file = function(file, ip, port, interval = 1,
                       bitly = FALSE, auto_save = TRUE,
-                      open_browser = TRUE) {
+                      open_browser = TRUE, public_url = NULL) {
   server = lc_server_iface$new(file = file, ip = ip,
                                port = port, interval = interval,
                                bitly = bitly, auto_save = auto_save,
-                               open_browser = open_browser)
+                               open_browser = open_browser,
+                               public_url = public_url)
 
   welcome_msg = c(
     "## Welcome to `livecode`!",
@@ -471,6 +538,3 @@ serve_file = function(file, ip, port, interval = 1,
 
   invisible(server)
 }
-
-
-
