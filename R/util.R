@@ -1,5 +1,45 @@
 pkg_resource <- function(...) {
-  system.file(..., package = "livecode", mustWork = TRUE)
+  system.file(..., package = "livecodeR", mustWork = TRUE)
+}
+
+resolve_stream_source <- function(file, auto_save) {
+  rstudio_available <- requireNamespace("rstudioapi", quietly = TRUE) &&
+    isTRUE(rstudioapi::isAvailable())
+  context <- if (rstudio_available) {
+    tryCatch(rstudioapi::getSourceEditorContext(), error = function(error) NULL)
+  } else {
+    NULL
+  }
+
+  if (is.null(file)) {
+    if (is.null(context) || is.null(context$path) || !nzchar(context$path)) {
+      stop(
+        paste(
+          "`file` is required outside RStudio.",
+          "In RStudio, save and focus a source document before omitting `file`."
+        ),
+        call. = FALSE
+      )
+    }
+    file <- context$path
+  }
+
+  if (!is.character(file) || length(file) != 1L || !nzchar(file)) {
+    stop("`file` must be one non-empty path.", call. = FALSE)
+  }
+
+  path <- normalizePath(path.expand(file), mustWork = FALSE)
+  document_id <- NULL
+
+  if (isTRUE(auto_save) && !is.null(context) &&
+      !is.null(context$path) && nzchar(context$path)) {
+    context_path <- normalizePath(path.expand(context$path), mustWork = FALSE)
+    if (identical(path, context_path)) {
+      document_id <- context$id
+    }
+  }
+
+  list(path = path, document_id = document_id)
 }
 
 html_escape <- function(value) {

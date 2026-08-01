@@ -43,7 +43,14 @@ This class is returned by [serve_file()]. Use `$stop()`, `$start()`, or
 \subsection{Method \code{new()}}{
 Create and start a streaming server.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LiveCodeServer$new(path, host, port, interval, open_browser)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{LiveCodeServer$new(
+  path,
+  host,
+  port,
+  interval,
+  open_browser,
+  document_id = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -58,6 +65,8 @@ Create and start a streaming server.
 \item{\code{interval}}{Browser polling interval in seconds.}
 
 \item{\code{open_browser}}{Whether to open the local viewer.}
+
+\item{\code{document_id}}{Optional RStudio document identifier to auto-save.}
 }
 \if{html}{\out{</div>}}
 }

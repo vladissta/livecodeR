@@ -1,4 +1,4 @@
-Package: livecode
+Package: livecodeR
 Title: Stream a Local Source File to Web Browsers
 Version: 0.2.0.9000
 Authors@R: c(
@@ -20,4 +20,6 @@ Imports:
     jsonlite,
     later,
     R6
+Suggests:
+    rstudioapi
 RoxygenNote: 7.3.3

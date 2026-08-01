@@ -2,7 +2,7 @@
 % Please edit documentation in R/servers.R
 \name{stop_all}
 \alias{stop_all}
-\title{Stop every livecode server created in this R session}
+\title{Stop every livecodeR server created in this R session}
 \usage{
 stop_all()
 }
@@ -10,5 +10,5 @@ stop_all()
 Invisibly returns `NULL`.
 }
 \description{
-Stop every livecode server created in this R session
+Stop every livecodeR server created in this R session
 }

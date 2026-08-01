@@ -2,7 +2,7 @@
 % Please edit documentation in R/servers.R
 \name{list_servers}
 \alias{list_servers}
-\title{List livecode servers created in this R session}
+\title{List livecodeR servers created in this R session}
 \usage{
 list_servers()
 }
@@ -10,5 +10,5 @@ list_servers()
 A list of server objects.
 }
 \description{
-List livecode servers created in this R session
+List livecodeR servers created in this R session
 }

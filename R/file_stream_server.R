@@ -1,4 +1,4 @@
-make_stream_app <- function(path, interval) {
+make_stream_app <- function(path, interval, document_id = NULL) {
   cache <- file_cache(path)
   page <- render_template(
     pkg_resource("templates", "prism.html"),
@@ -14,7 +14,12 @@ make_stream_app <- function(path, interval) {
 
   websocket_state <- function(client_revision = NULL) {
     tryCatch(
-      c(cache$state(client_revision), list(interval = interval)),
+      {
+        if (!is.null(document_id)) {
+          rstudioapi::documentSave(document_id)
+        }
+        c(cache$state(client_revision), list(interval = interval))
+      },
       error = function(error) list(
         changed = FALSE,
         interval = interval,
@@ -153,6 +158,7 @@ make_stream_app <- function(path, interval) {
 #' @param port TCP port used by the server.
 #' @param interval Browser polling interval in seconds.
 #' @param open_browser Whether to open the local viewer.
+#' @param document_id Optional RStudio document identifier to auto-save.
 #'
 #' @keywords internal
 LiveCodeServer <- R6::R6Class(
@@ -163,16 +169,19 @@ LiveCodeServer <- R6::R6Class(
     bind_host = NULL,
     bind_port = NULL,
     interval = NULL,
+    document_id = NULL,
     server = NULL,
     stream = NULL
   ),
   public = list(
     #' @description Create and start a streaming server.
-    initialize = function(path, host, port, interval, open_browser) {
+    initialize = function(path, host, port, interval, open_browser,
+                          document_id = NULL) {
       private$file_path <- normalizePath(path, mustWork = TRUE)
       private$bind_host <- host
       private$bind_port <- port
       private$interval <- interval
+      private$document_id <- document_id
       self$start()
 
       if (isTRUE(open_browser)) {
@@ -186,7 +195,11 @@ LiveCodeServer <- R6::R6Class(
         return(invisible(self))
       }
 
-      private$stream <- make_stream_app(private$file_path, private$interval)
+      private$stream <- make_stream_app(
+        private$file_path,
+        private$interval,
+        private$document_id
+      )
       private$server <- tryCatch(
         httpuv::startServer(
           private$bind_host,
@@ -197,7 +210,7 @@ LiveCodeServer <- R6::R6Class(
         error = function(error) {
           stop(
             sprintf(
-              "Could not start livecode at %s:%d: %s",
+              "Could not start livecodeR at %s:%d: %s",
               private$bind_host,
               private$bind_port,
               conditionMessage(error)
@@ -249,7 +262,7 @@ LiveCodeServer <- R6::R6Class(
     #' @param ... Unused.
     print = function(...) {
       status <- if (self$is_running()) "running" else "stopped"
-      cat(sprintf("<livecode server: %s>\n  file: %s\n  url:  %s\n",
+      cat(sprintf("<livecodeR server: %s>\n  file: %s\n  url:  %s\n",
                   status, private$file_path, self$url))
       invisible(self)
     }
@@ -284,23 +297,31 @@ LiveCodeServer <- R6::R6Class(
 #' `host = "0.0.0.0"` to accept connections from devices on the same Wi-Fi or
 #' wired network.
 #'
-#' @param file Path to the source file to stream.
+#' @param file Path to the source file to stream. When omitted in RStudio, the
+#'   active saved source document is used.
 #' @param host Address on which the server listens. Defaults to localhost.
 #' @param port TCP port, from 1 through 65535.
 #' @param interval Browser polling interval in seconds.
 #' @param open_browser Open the local viewer after starting the server.
+#' @param auto_save Automatically save the streamed document when it is open
+#'   in RStudio, so unsaved editor changes are broadcast.
 #'
 #' @return A [LiveCodeServer] object, invisibly.
 #' @export
-serve_file <- function(file, host = "127.0.0.1", port = 3000L,
-                       interval = 0.75, open_browser = interactive()) {
-  if (!is.character(file) || length(file) != 1L || !nzchar(file)) {
-    stop("`file` must be one non-empty path.", call. = FALSE)
+serve_file <- function(file = NULL, host = "127.0.0.1", port = 3000L,
+                       interval = 0.75, open_browser = interactive(),
+                       auto_save = TRUE) {
+  if (!is.logical(auto_save) || length(auto_save) != 1L || is.na(auto_save)) {
+    stop("`auto_save` must be `TRUE` or `FALSE`.", call. = FALSE)
   }
-  if (!file.exists(path.expand(file))) {
+
+  source <- resolve_stream_source(file, auto_save)
+  file <- source$path
+
+  if (!file.exists(file)) {
     stop(sprintf("File does not exist: %s", file), call. = FALSE)
   }
-  if (dir.exists(path.expand(file))) {
+  if (dir.exists(file)) {
     stop(sprintf("`file` must not be a directory: %s", file), call. = FALSE)
   }
   if (!is.character(host) || length(host) != 1L || !nzchar(host)) {
@@ -319,10 +340,11 @@ serve_file <- function(file, host = "127.0.0.1", port = 3000L,
   }
 
   invisible(LiveCodeServer$new(
-    path = path.expand(file),
+    path = file,
     host = host,
     port = port,
     interval = interval,
-    open_browser = open_browser
+    open_browser = open_browser,
+    document_id = source$document_id
   ))
 }

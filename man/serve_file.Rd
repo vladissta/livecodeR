@@ -5,15 +5,17 @@
 \title{Stream a local source file to web browsers}
 \usage{
 serve_file(
-  file,
+  file = NULL,
   host = "127.0.0.1",
   port = 3000L,
   interval = 0.75,
-  open_browser = interactive()
+  open_browser = interactive(),
+  auto_save = TRUE
 )
 }
 \arguments{
-\item{file}{Path to the source file to stream.}
+\item{file}{Path to the source file to stream. When omitted in RStudio, the
+active saved source document is used.}
 
 \item{host}{Address on which the server listens. Defaults to localhost.}
 
@@ -22,6 +24,9 @@ serve_file(
 \item{interval}{Browser polling interval in seconds.}
 
 \item{open_browser}{Open the local viewer after starting the server.}
+
+\item{auto_save}{Automatically save the streamed document when it is open
+in RStudio, so unsaved editor changes are broadcast.}
 }
 \value{
 A [LiveCodeServer] object, invisibly.
