@@ -1,87 +1,84 @@
+# livecode
 
-# livecodeR 
-<!--<img src='man/figures/logo.png' align="right" height="140" />-->
-<!-- badges: start -->
-<!--[![R build
-status](https://github.com/rundel/livecode/workflows/R-CMD-check/badge.svg)](https://github.com/rundel/livecode/actions?query=workflow%3AR-CMD-check)
-![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)-->
-<!-- badges: end -->
+`livecode` runs a small local web server that displays an R source file and
+refreshes connected browsers whenever the saved file changes.
 
-<!--<br/>-->
+## Install
 
-livecodeR is the **fork** of R package [livecode](https://github.com/rundel/livecode.git) that enables you to broadcast a local R (or any other text) document over the web and provide live updates as it is edited. This fork fixes some errors which appeared to me when i started using it. And now it works!(?)
-
-<!--<br/>-->
-
-![](man/figures/livecode.png)
-
-## Installation
-
-You can install the development version of `livecodeR` from this GitHub
-repository:
-
-``` r
+```r
 remotes::install_github("vladissta/livecodeR")
 ```
 
-## Usage
+## Use on this computer or through ngrok
 
-From RStudio **with an open R script** type in console:
+Start the server on localhost:
 
-``` r
-server = livecode::serve_file(port=3000)
-#> ✔ Started sharing 'example.R' at 'http://127.0.0.1:3000'.
-#> i Server is listening on all interfaces. For a public tunnel, set `public_url=` to your ngrok URL.
-```
-*if `public_url` specified than when `serve_file()` run it opens this url in browser (it does not launch any tunnel)*
-
-### Two ways of usage
-
-1. Create tunnel via ngrok, xtunnel, tuna or otherplaforms for creating public URLs for accessing locally run services using the address you specified for `serve_file()`. In example above it is `http://127.0.0.1:3000`. Then any user in any place can connect to public url provided by such platform.
-2. Connect to local network (e.g. wifi router) and specify your local `ip` parameter in `serve_file()` which you can find out using `livecode::network_interfaces()`. Then any user connected to the same network (wifi) can access to your broadcast via `http://198.168.*.*:****`
-
--------
-
-You can send messages to your users.
-
-``` r
-server$send_msg("Hello World!", type = "success")
-server$send_msg("Oh no!\n\n Something bad has happened.", type = "error")
+```r
+server <- livecode::serve_file(
+  file = "example.R",
+  host = "127.0.0.1",
+  port = 3000
+)
 ```
 
-Once finished, shut the server down.
+Open <http://127.0.0.1:3000>. To expose the same server through ngrok, leave R
+running and run this in a separate terminal:
 
-``` r
+```sh
+ngrok http 3000
+```
+
+Share the HTTPS URL printed by ngrok. `livecode` does not start or configure
+the tunnel itself.
+
+## Use on the same Wi-Fi network
+
+Listen on every network interface:
+
+```r
+server <- livecode::serve_file(
+  file = "example.R",
+  host = "0.0.0.0",
+  port = 3000
+)
+```
+
+Find the presenting computer's LAN address:
+
+```sh
+# macOS, usually Wi-Fi
+ipconfig getifaddr en0
+
+# Linux
+hostname -I
+
+# Windows PowerShell
+ipconfig
+```
+
+If the address is `192.168.1.42`, viewers connected to the same router open:
+
+```text
+http://192.168.1.42:3000
+```
+
+`0.0.0.0` is a listening address, not an address to enter in a browser. The
+operating-system firewall must allow incoming connections to R on port 3000,
+and the router must allow devices to communicate with each other. Guest Wi-Fi
+networks commonly block this communication.
+
+## Manage the server
+
+```r
+server$is_running()
+server$restart()
 server$stop()
-#> ✔ Stopped server at 'http://127.0.0.1:3000'.
+
+livecode::list_servers()
+livecode::stop_all()
 ```
 
-## Using bitly
-
-**This functionality was not fixed or even tested, so it may not work!**
-
-Original `livecode` has built in functionality for generating a bitlink
-automatically for your livecoding session. 
-
-To do this you will need to provide `livecode` with a bitly API access token. To obtain one of these tokens you will need to create an account with bitly (the free tier is sufficient) and then select <kbd>Profile Settings</kbd> \> <kbd>Generic Access Token</kbd> and then enter your password when prompted. This results in a long hexidecimal string that you should copy to your clipboard.
-
-`livecode` looks for this token in an environmental variable called `BITLY_PAT`. To properly configure this environmental variable we can use the `usethis` package. In R run the following,
-
-``` r
-usethis::edit_r_environ()
-```
-
-which will open your `.Renviron` file for you and you will just need to
-add a single line with the format
-
-    BITLY_PAT=0123456789abcdef0123456789abcdef01234567
-
-replacing `0123456789abcdef0123456789abcdef01234567` with the
-hexidecimal string you copied from bitly. After saving `.Renviron` you
-will need to restart your R session and can then test that your token is
-function correctly by running,
-
-``` r
-livecode::bitly_test_token()
-#> ✔ Your bitly token is functioning correctly.
-```
+The browser normally receives updates over one persistent WebSocket connection.
+The server checks the file once and broadcasts changed content to all connected
+viewers. If a browser or tunnel cannot establish a WebSocket, it automatically
+falls back to revision-based HTTP polling every 0.75 seconds.

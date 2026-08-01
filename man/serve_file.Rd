@@ -2,36 +2,37 @@
 % Please edit documentation in R/file_stream_server.R
 \name{serve_file}
 \alias{serve_file}
-\title{Create a livecode server for broadcasting a file}
+\title{Stream a local source file to web browsers}
 \usage{
 serve_file(
   file,
-  ip,
-  port,
-  interval = 1,
-  bitly = FALSE,
-  auto_save = TRUE,
-  open_browser = TRUE,
-  public_url = NULL
+  host = "127.0.0.1",
+  port = 3000L,
+  interval = 0.75,
+  open_browser = interactive()
 )
 }
 \arguments{
-\item{file}{Path to file to broadcast.}
+\item{file}{Path to the source file to stream.}
 
-\item{ip}{ip address to bind the server to, defaults to `0.0.0.0`.}
+\item{host}{Address on which the server listens. Defaults to localhost.}
 
-\item{port}{port of the server, defaults to a random value.}
+\item{port}{TCP port, from 1 through 65535.}
 
-\item{interval}{page update interval in seconds.}
+\item{interval}{Browser polling interval in seconds.}
 
-\item{bitly}{should a bitly bit link be created for the server.}
-
-\item{auto_save}{should the broadcast file be auto saved during each update tic.}
-
-\item{open_browser}{should a browser session be opened.}
-
-\item{public_url}{public URL to advertise to viewers, e.g. an ngrok URL.}
+\item{open_browser}{Open the local viewer after starting the server.}
+}
+\value{
+A [LiveCodeServer] object, invisibly.
 }
 \description{
-Create a livecode server for broadcasting a file
+Starts a local HTTP server and returns a server object. Browsers receive
+changed source code over WebSockets, with HTTP polling as an automatic
+fallback when a persistent connection is unavailable.
+}
+\details{
+Use `host = "127.0.0.1"` with a local tunnel such as ngrok. Use
+`host = "0.0.0.0"` to accept connections from devices on the same Wi-Fi or
+wired network.
 }

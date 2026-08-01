@@ -2,6 +2,13 @@
 .Rhistory
 .RData
 .DS_Store
-.Rbuildignore
-*.webloc
-.httr-oauth
+.Rcheck/
+..Rcheck/
+*.o
+*.so
+*.dll
+
+# Tunnel and local secret configuration
+tunnel.conf
+*.key
+*.pem

@@ -2,19 +2,16 @@
 % Please edit documentation in R/livecode.R
 \docType{package}
 \name{livecode-package}
-\alias{livecode-package}
 \alias{livecode}
-\title{Source code broadcasting server}
+\alias{livecode-package}
+\title{Stream source code from a local web server}
 \description{
-Server for broadcasting source code to multiple viewers
-}
-\details{
-Broadcast a local R (or other text) document over the web and provide live updates as it is edited.
-}
-\seealso{
-\link{serve_file}
+The livecode package serves one local source file to one or more browsers.
+It does not create public tunnels; tools such as ngrok can expose the local
+HTTP server separately.
 }
 \author{
-Colin Rundel \email{rundel@gmail.com}
+\strong{Maintainer}: Colin Rundel \email{rundel@gmail.com}
+
 }
-\keyword{package}
+\keyword{internal}

@@ -1,23 +1,9 @@
-#' Server for broadcasting source code to multiple viewers
+#' Stream source code from a local web server
 #'
-#' Broadcast a local R (or other text) document over the web and provide live updates as it is edited.
+#' The livecode package serves one local source file to one or more browsers.
+#' It does not create public tunnels; tools such as ngrok can expose the local
+#' HTTP server separately.
 #'
-#' @seealso \link{serve_file}
-#'
-#' @name livecode-package
-#' @aliases livecode
-#' @docType package
-#' @title Source code broadcasting server
-#' @author Colin Rundel \email{rundel@gmail.com}
-#' @keywords package
-NULL
-
-## usethis namespace: start
-#' @importFrom Rcpp sourceCpp
-## usethis namespace: end
-NULL
-
-## usethis namespace: start
-#' @useDynLib livecode, .registration = TRUE
-## usethis namespace: end
-NULL
+#' @importFrom R6 R6Class
+#' @keywords internal
+"_PACKAGE"

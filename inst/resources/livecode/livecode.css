@@ -1,26 +1,34 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+
 body {
-  font-family: 'Nunito', sans-serif;
-  font-size: 16px;
+  margin: 0;
 }
 
-.noty_body h1,h2,h3,h4,p {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.45rem 0.75rem;
+  background: Canvas;
+  border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+  font-size: 0.8rem;
 }
 
-.noty_body a, a:visited {
-
-  color: inherit;
+#status[data-state="live"] {
+  color: #248a3d;
 }
 
-.noty_body .server_link {
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#status[data-state="error"] {
+  color: #c9342f;
 }
 
-.noty_body .server_link a, a:visited {
-  font-size: 130%;
-  text-decoration: none;
+main {
+  padding: 0 1rem 2rem;
+}
+
+pre[class*="language-"] {
+  margin: 1rem 0;
 }

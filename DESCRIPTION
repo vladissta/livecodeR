@@ -1,32 +1,23 @@
 Package: livecode
-Title: Broadcast a source file to multiple concurrant users
-Version: 0.1.0.9000
-Authors@R: 
-    person(given = "Colin",
-           family = "Rundel",
-           role = c("aut", "cre"),
-           email = "rundel@gmail.com")
-Description: Broadcast a local R (or other text) document over the web and provide live updates as it is edited.
+Title: Stream a Local Source File to Web Browsers
+Version: 0.2.0.9000
+Authors@R: c(
+    person(
+      given = "Colin",
+      family = "Rundel",
+      role = c("aut", "cre"),
+      email = "rundel@gmail.com"
+    )
+  )
+Description: Runs a small local web server that displays a source file and
+    refreshes connected browsers as the file is edited. The server can be
+    reached through a local network or exposed with a separate tunnel such
+    as ngrok.
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
-Imports: 
-    usethis,
-    readr,
-    glue,
-    withr,
-    jsonlite,
+Imports:
     httpuv,
-    httr,
-    purrr,
-    Rcpp,
-    iptools,
-    markdown,
+    jsonlite,
     later,
-    tibble,
-    crayon,
-    rstudioapi,
-    stringi
-RoxygenNote: 7.1.0
-LinkingTo: 
-    Rcpp
+    R6
+RoxygenNote: 7.3.3

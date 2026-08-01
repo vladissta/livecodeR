@@ -1,1 +1,0 @@
-PKG_LIBS = -liphlpapi -lWs2_32

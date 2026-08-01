@@ -1,38 +1,50 @@
-.globals = new.env()
+.livecode_state <- new.env(parent = emptyenv())
+.livecode_state$servers <- list()
 
-.globals$servers = list()
+register_server <- function(server) {
+  already_registered <- vapply(
+    .livecode_state$servers,
+    identical,
+    logical(1),
+    y = server
+  )
 
-register_server = function(server) {
-  match = purrr::map_lgl(.globals$servers, identical, y = server)
+  if (!any(already_registered)) {
+    .livecode_state$servers[[length(.livecode_state$servers) + 1L]] <- server
+  }
 
-  if (any(match))
-    usethis::ui_warn("Server is already registered.")
-  else
-    .globals$servers[[length(.globals$servers)+1]] = server
-
-  invisible()
+  invisible(server)
 }
 
-deregister_server = function(server) {
-  match = purrr::map_lgl(.globals$servers, identical, y = server)
-
-  if (!any(match))
-    usethis::ui_warn("Unable to find matching running server.")
-  else
-    .globals$servers = .globals$servers[!match]
-
-  invisible()
+deregister_server <- function(server) {
+  matching <- vapply(
+    .livecode_state$servers,
+    identical,
+    logical(1),
+    y = server
+  )
+  .livecode_state$servers <- .livecode_state$servers[!matching]
+  invisible(server)
 }
 
+#' List livecode servers created in this R session
+#'
+#' @return A list of server objects.
 #' @export
-stop_all = function() {
-  purrr::walk(.globals$servers, ~ .$stop())
+list_servers <- function() {
+  .livecode_state$servers
 }
 
+#' Stop every livecode server created in this R session
+#'
+#' @return Invisibly returns `NULL`.
 #' @export
-list_servers = function() {
-  .globals$servers
+stop_all <- function() {
+  servers <- .livecode_state$servers
+  for (server in servers) {
+    if (server$is_running()) {
+      server$stop()
+    }
+  }
+  invisible(NULL)
 }
-
-
-

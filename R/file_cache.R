@@ -1,42 +1,75 @@
-FileCache = R6::R6Class(
+FileCache <- R6::R6Class(
   "FileCache",
-  public = list(
-    initialize = function(path, file_id = NULL) {
-      path = normalizePath(path)
-      if (!file.exists(path))
-        usethis::ui_stop("Unable to locate file {usethis::ui_value(path)}")
-
-      private$path = path
-      private$file_id = file_id
-      self$update_content()
-    },
-    need_update = function() {
-      cur_mtime = file.mtime(private$path)
-      cur_mtime > private$mtime
-    },
-    update_content = function() {
-      #message("Updating content")
-      private$mtime = file.mtime(private$path)
-      private$cache_content = readr::read_file(private$path)
-      self
-    }
-  ),
+  cloneable = FALSE,
   private = list(
     path = NULL,
-    file_id = NULL,
     mtime = NULL,
-    cache_content = NULL
-  ),
-  active = list(
-    content = function() {
-      if (self$need_update()) {
-        self$update_content()
+    size = NULL,
+    content = NULL,
+    revision = 0L,
+
+    file_info = function() {
+      if (!file.exists(private$path)) {
+        stop(sprintf("The streamed file no longer exists: %s", private$path),
+             call. = FALSE)
       }
-      private$cache_content
+
+      info <- file.info(private$path)
+      if (isTRUE(info$isdir)) {
+        stop(sprintf("The streamed path is a directory: %s", private$path),
+             call. = FALSE)
+      }
+
+      info
+    },
+
+    read_content = function(size) {
+      connection <- file(private$path, open = "rb")
+      on.exit(close(connection), add = TRUE)
+      rawToChar(readBin(connection, what = "raw", n = size))
+    },
+
+    refresh = function(force = FALSE) {
+      info <- private$file_info()
+      changed <- force ||
+        !identical(info$mtime, private$mtime) ||
+        !identical(info$size, private$size)
+
+      if (changed) {
+        private$content <- private$read_content(info$size)
+        private$mtime <- info$mtime
+        private$size <- info$size
+        private$revision <- private$revision + 1L
+      }
+
+      invisible(changed)
+    }
+  ),
+  public = list(
+    initialize = function(path) {
+      private$path <- normalizePath(path, mustWork = TRUE)
+      private$refresh(force = TRUE)
+    },
+
+    state = function(client_revision = NULL) {
+      private$refresh()
+      changed <- is.null(client_revision) ||
+        !identical(as.integer(client_revision), private$revision)
+
+      state <- list(
+        changed = changed,
+        revision = private$revision
+      )
+
+      if (changed) {
+        state$content <- private$content
+      }
+
+      state
     }
   )
 )
 
-file_cache = function(path, file_id = NULL) {
-  FileCache$new(path, file_id)
+file_cache <- function(path) {
+  FileCache$new(path)
 }
