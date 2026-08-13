@@ -121,12 +121,15 @@ file stored on disk.
 Use `preview_qmd()` when viewers should see rendered output instead of the
 `.qmd` source. It runs `quarto preview` as a managed background process, so
 saved changes are rendered and connected browsers reload automatically.
+The [Quarto CLI](https://quarto.org/docs/get-started/) must be installed and
+available on `PATH`.
 
 ```r
 preview <- livecodeR::preview_qmd(
   file = "presentation.qmd",
   host = "127.0.0.1",
   port = 3000,
+  to = "revealjs",
   cache = TRUE
 )
 
@@ -144,7 +147,7 @@ only preview files you trust.
 Caching is enabled by default. Unchanged computational chunks can reuse their
 previous results, which avoids repeating expensive work on every preview
 render. Use `cache = FALSE` when results depend on external state that Quarto
-cannot detect, or refresh the cache explicitly before relying on those results.
+cannot detect; this bypasses stored results during preview renders.
 
 ## Use on the same Wi-Fi network
 
