@@ -9,7 +9,7 @@ refreshes connected browsers whenever the saved file changes.
 remotes::install_github("vladissta/livecodeR")
 ```
 
-## Use on this computer or through ngrok
+## Use on this computer or through a public tunnel
 
 Start the server on localhost:
 
@@ -27,15 +27,37 @@ server <- livecodeR::serve_file(
 
 Open <http://127.0.0.1:3000>.
 
-To expose the same server through `ngrok`, run this in a separate terminal:
+### Recommended: Cloudflare Quick Tunnel
+
+After [installing `cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/),
+run this in a separate terminal while the R server is running:
 
 ```sh
-ngrok http 3000
+cloudflared tunnel --url http://127.0.0.1:3000
 ```
 
-Share the HTTPS URL printed by ngrok. `livecodeR` does not start or configure
-the tunnel itself. The public URL has no package-level authentication: anyone
-with the URL can view the streamed file.
+Share the random `https://...trycloudflare.com` URL printed by `cloudflared`.
+Cloudflare Quick Tunnels require no Cloudflare account and support WebSockets,
+but they are intended for testing and development and provide no uptime
+guarantee. See the
+[Cloudflare Quick Tunnel documentation](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).
+
+### Alternative: localhost.run
+
+If SSH is installed, `localhost.run` can expose the server without installing
+a tunnel application or creating an account:
+
+```sh
+ssh -R 80:localhost:3000 localhost.run
+```
+
+Share the HTTPS URL printed in the terminal. Free `localhost.run` addresses
+may change and the free service is speed-limited. See the
+[localhost.run documentation](https://localhost.run/docs/).
+
+`livecodeR` does not start or configure either tunnel. Keep both the R server
+and tunnel command running during the session. Public URLs have no
+package-level authentication: anyone with the URL can view the streamed file.
 
 When the streamed file is open in RStudio, `auto_save = TRUE` saves editor
 changes before checking for a new revision. Set `auto_save = FALSE` if you only
@@ -93,6 +115,36 @@ Auto Save can be scoped to a user, workspace, workspace folder, or language,
 but not to one exact file. Streaming a genuinely unsaved Positron editor buffer
 would require a companion Positron extension; the R package can only read the
 file stored on disk.
+
+## Preview a rendered Quarto document
+
+Use `preview_qmd()` when viewers should see rendered output instead of the
+`.qmd` source. It runs `quarto preview` as a managed background process, so
+saved changes are rendered and connected browsers reload automatically.
+
+```r
+preview <- livecodeR::preview_qmd(
+  file = "presentation.qmd",
+  host = "127.0.0.1",
+  port = 3000,
+  cache = TRUE
+)
+
+preview$url
+preview$logs()
+preview$stop()
+```
+
+Quarto may choose another port if the requested one is unavailable. The
+object's `$url` and `$port` update after Quarto reports the actual preview URL.
+As with `serve_file()`, use `host = "0.0.0.0"` to make the preview available on
+the local network. Rendering can execute code embedded in the document, so
+only preview files you trust.
+
+Caching is enabled by default. Unchanged computational chunks can reuse their
+previous results, which avoids repeating expensive work on every preview
+render. Use `cache = FALSE` when results depend on external state that Quarto
+cannot detect, or refresh the cache explicitly before relying on those results.
 
 ## Use on the same Wi-Fi network
 

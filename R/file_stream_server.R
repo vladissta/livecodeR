@@ -293,9 +293,9 @@ LiveCodeServer <- R6::R6Class(
 #' changed source code over WebSockets, with HTTP polling as an automatic
 #' fallback when a persistent connection is unavailable.
 #'
-#' Use `host = "127.0.0.1"` with a local tunnel such as ngrok. Use
-#' `host = "0.0.0.0"` to accept connections from devices on the same Wi-Fi or
-#' wired network.
+#' Use `host = "127.0.0.1"` with a public tunnel such as Cloudflare Tunnel or
+#' localhost.run. Use `host = "0.0.0.0"` to accept connections from devices on
+#' the same Wi-Fi or wired network.
 #'
 #' @param file Path to the source file to stream. When omitted in RStudio, the
 #'   active saved source document is used.

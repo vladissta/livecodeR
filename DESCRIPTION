@@ -12,14 +12,17 @@ Authors@R: c(
 Description: Runs a small local web server that displays a source file and
     refreshes connected browsers as the file is edited. The server can be
     reached through a local network or exposed with a separate tunnel such
-    as ngrok.
+    as Cloudflare Tunnel or localhost.run.
 License: GPL-3
 Encoding: UTF-8
 Imports:
     httpuv,
     jsonlite,
     later,
+    processx,
     R6
 Suggests:
-    rstudioapi
+    rstudioapi,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 RoxygenNote: 7.3.3
