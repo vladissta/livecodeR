@@ -18,6 +18,10 @@ This class is returned by [serve_file()]. Use `$stop()`, `$start()`, or
 \describe{
 \item{\code{url}}{Local URL that can be opened on the presenting computer.}
 
+\item{\code{lan_url}}{URL that devices on the local network can open. This is
+`NA` when the server is not listening on all interfaces or a local IP
+address cannot be detected.}
+
 \item{\code{path}}{Absolute path to the streamed file.}
 
 \item{\code{host}}{Listening address.}

@@ -161,24 +161,20 @@ server <- livecodeR::serve_file(
 )
 ```
 
-Find the presenting computer's LAN address:
-
-```bash
-# macOS, usually Wi-Fi
-ipconfig getifaddr en0
-
-# Linux
-hostname -I
-
-# Windows PowerShell
-ipconfig
-```
-
-For example, if the presenting computer's address is `192.168.1.42`, viewers
-connected to the same router open:
+When the server starts, it prints both the address for this computer and the
+network address to share, for example:
 
 ```text
-http://192.168.1.42:3000
+Started streaming 'example.R' at http://127.0.0.1:3000
+Network URL: http://192.168.1.42:3000
+```
+
+You can retrieve the address again from R without using a terminal:
+
+```r
+livecodeR::local_ip()
+server$lan_url
+print(server)
 ```
 
 `0.0.0.0` is a listening address, not an address to enter in a browser. The

@@ -223,10 +223,12 @@ LiveCodeServer <- R6::R6Class(
       register_server(self)
       message(sprintf("Started streaming '%s' at %s", basename(private$file_path), self$url))
       if (identical(private$bind_host, "0.0.0.0")) {
-        message(sprintf(
-          "For Wi-Fi viewers, replace 127.0.0.1 with this computer's LAN IP and keep port %d.",
-          private$bind_port
-        ))
+        lan_url <- self$lan_url
+        if (is.na(lan_url)) {
+          message("Network URL unavailable: a local-network IP was not detected.")
+        } else {
+          message(sprintf("Network URL: %s", lan_url))
+        }
       }
 
       invisible(self)
@@ -264,6 +266,11 @@ LiveCodeServer <- R6::R6Class(
       status <- if (self$is_running()) "running" else "stopped"
       cat(sprintf("<livecodeR server: %s>\n  file: %s\n  url:  %s\n",
                   status, private$file_path, self$url))
+      if (identical(private$bind_host, "0.0.0.0")) {
+        lan_url <- self$lan_url
+        displayed_url <- if (is.na(lan_url)) "unavailable" else lan_url
+        cat(sprintf("  lan:  %s\n", displayed_url))
+      }
       invisible(self)
     }
   ),
@@ -276,6 +283,20 @@ LiveCodeServer <- R6::R6Class(
         private$bind_host
       }
       sprintf("http://%s:%d", display_host, private$bind_port)
+    },
+
+    #' @field lan_url URL that devices on the local network can open. This is
+    #'   `NA` when the server is not listening on all interfaces or a local IP
+    #'   address cannot be detected.
+    lan_url = function() {
+      if (!identical(private$bind_host, "0.0.0.0")) {
+        return(NA_character_)
+      }
+      addresses <- local_ipv4_addresses()
+      if (!length(addresses)) {
+        return(NA_character_)
+      }
+      sprintf("http://%s:%d", addresses[[1L]], private$bind_port)
     },
 
     #' @field path Absolute path to the streamed file.
@@ -295,7 +316,8 @@ LiveCodeServer <- R6::R6Class(
 #'
 #' Use `host = "127.0.0.1"` with a public tunnel such as Cloudflare Tunnel or
 #' localhost.run. Use `host = "0.0.0.0"` to accept connections from devices on
-#' the same Wi-Fi or wired network.
+#' the same Wi-Fi or wired network. In the latter case, the ready-to-share
+#' network URL is printed at startup and is available as `server$lan_url`.
 #'
 #' @param file Path to the source file to stream. When omitted in RStudio, the
 #'   active saved source document is used.

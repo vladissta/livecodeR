@@ -39,5 +39,6 @@ fallback when a persistent connection is unavailable.
 \details{
 Use `host = "127.0.0.1"` with a public tunnel such as Cloudflare Tunnel or
 localhost.run. Use `host = "0.0.0.0"` to accept connections from devices on
-the same Wi-Fi or wired network.
+the same Wi-Fi or wired network. In the latter case, the ready-to-share
+network URL is printed at startup and is available as `server$lan_url`.
 }
