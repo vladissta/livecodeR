@@ -50,10 +50,11 @@ html_escape <- function(value) {
   value
 }
 
-render_template <- function(path, title) {
+render_template <- function(path, title, asset_version = "") {
   template <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"),
                     collapse = "\n")
-  gsub("{{title}}", html_escape(title), template, fixed = TRUE)
+  template <- gsub("{{title}}", html_escape(title), template, fixed = TRUE)
+  gsub("{{asset_version}}", asset_version, template, fixed = TRUE)
 }
 
 json_response <- function(body, status = 200L) {

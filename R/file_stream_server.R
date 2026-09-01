@@ -1,8 +1,14 @@
 make_stream_app <- function(path, interval, document_id = NULL) {
   cache <- file_cache(path)
+  livecode_assets <- c(
+    pkg_resource("resources", "livecode", "livecode.css"),
+    pkg_resource("resources", "livecode", "livecode.js")
+  )
+  asset_version <- paste(unname(tools::md5sum(livecode_assets)), collapse = "")
   page <- render_template(
     pkg_resource("templates", "prism.html"),
-    basename(path)
+    basename(path),
+    asset_version
   )
 
   sockets <- new.env(parent = emptyenv())
