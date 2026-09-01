@@ -8,9 +8,48 @@ let reconnectTimer = null;
 let connectionTimer = null;
 let polling = false;
 let reconnectDelay = 2000;
+let sourceText = "";
 
 const source = document.getElementById("source");
 const status = document.getElementById("status");
+const copySource = document.getElementById("copy-source");
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) {
+    throw new Error("Copy command was rejected");
+  }
+}
+
+copySource.addEventListener("click", async function() {
+  try {
+    await copyText(sourceText);
+    copySource.textContent = "Copied";
+    copySource.dataset.state = "copied";
+  } catch (error) {
+    copySource.textContent = "Try again";
+    copySource.dataset.state = "error";
+  }
+
+  window.setTimeout(() => {
+    copySource.textContent = "Copy";
+    delete copySource.dataset.state;
+  }, 1500);
+});
 
 function renderState(state) {
   if (typeof state.interval === "number") {
@@ -28,7 +67,9 @@ function renderState(state) {
   }
 
   if (state.changed && typeof state.content === "string") {
-    source.textContent = state.content;
+    sourceText = state.content;
+    source.textContent = sourceText;
+    copySource.disabled = false;
     revision = state.revision;
     if (window.Prism) {
       Prism.highlightElement(source);

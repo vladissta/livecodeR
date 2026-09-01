@@ -11,10 +11,47 @@ header {
   position: sticky;
   top: 0;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.45rem 0.75rem;
   background: Canvas;
   border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
   font-size: 0.8rem;
+}
+
+#copy-source {
+  padding: 0.2rem 0.55rem;
+  color: CanvasText;
+  background: color-mix(in srgb, CanvasText 7%, Canvas);
+  border: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+  border-radius: 0.35rem;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+#copy-source:hover:not(:disabled) {
+  background: color-mix(in srgb, CanvasText 13%, Canvas);
+}
+
+#copy-source:focus-visible {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+#copy-source:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+#copy-source[data-state="copied"] {
+  color: #248a3d;
+}
+
+#copy-source[data-state="error"] {
+  color: #c9342f;
 }
 
 #status[data-state="live"] {
