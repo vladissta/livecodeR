@@ -27,6 +27,23 @@ server <- livecodeR::serve_file(
 
 Open <http://127.0.0.1:3000>.
 
+## Manage the server
+
+```r
+server$is_running()
+server$restart()
+server$stop()
+
+livecodeR::list_servers()
+livecodeR::stop_all()
+```
+
+The browser normally receives updates over one persistent WebSocket connection.
+The server checks the file once and broadcasts changed content to all connected
+viewers. If a browser or tunnel cannot establish a WebSocket, it automatically
+falls back to revision-based HTTP polling at the configured `interval`, which
+defaults to 0.75 seconds.
+
 ### Recommended: Cloudflare Quick Tunnel
 
 After [installing `cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/),
@@ -95,23 +112,6 @@ print(server)
 operating-system firewall must allow incoming connections to R on port 3000,
 and the router must allow devices to communicate with each other. Guest Wi-Fi
 networks commonly block this communication.
-
-## Manage the server
-
-```r
-server$is_running()
-server$restart()
-server$stop()
-
-livecodeR::list_servers()
-livecodeR::stop_all()
-```
-
-The browser normally receives updates over one persistent WebSocket connection.
-The server checks the file once and broadcasts changed content to all connected
-viewers. If a browser or tunnel cannot establish a WebSocket, it automatically
-falls back to revision-based HTTP polling at the configured `interval`, which
-defaults to 0.75 seconds.
 
 ## Use with Positron
 
