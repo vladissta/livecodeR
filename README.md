@@ -63,6 +63,56 @@ When the streamed file is open in RStudio, `auto_save = TRUE` saves editor
 changes before checking for a new revision. Set `auto_save = FALSE` if you only
 want manually saved changes to be broadcast.
 
+## Use on the same Wi-Fi network
+
+Listen on every network interface:
+
+```r
+server <- livecodeR::serve_file(
+  file = "example.R",
+  host = "0.0.0.0",
+  port = 3000
+)
+```
+
+When the server starts, it prints both the address for this computer and the
+network address to share, for example:
+
+```text
+Started streaming 'example.R' at http://127.0.0.1:3000
+Network URL: http://192.168.1.42:3000
+```
+
+You can retrieve the address again from R without using a terminal:
+
+```r
+livecodeR::local_ip()
+server$lan_url
+print(server)
+```
+
+`0.0.0.0` is a listening address, not an address to enter in a browser. The
+operating-system firewall must allow incoming connections to R on port 3000,
+and the router must allow devices to communicate with each other. Guest Wi-Fi
+networks commonly block this communication.
+
+## Manage the server
+
+```r
+server$is_running()
+server$restart()
+server$stop()
+
+livecodeR::list_servers()
+livecodeR::stop_all()
+```
+
+The browser normally receives updates over one persistent WebSocket connection.
+The server checks the file once and broadcasts changed content to all connected
+viewers. If a browser or tunnel cannot establish a WebSocket, it automatically
+falls back to revision-based HTTP polling at the configured `interval`, which
+defaults to 0.75 seconds.
+
 ## Use with Positron
 
 Positron does not expose the RStudio document API used by `auto_save = TRUE`.
@@ -148,53 +198,3 @@ Caching is enabled by default. Unchanged computational chunks can reuse their
 previous results, which avoids repeating expensive work on every preview
 render. Use `cache = FALSE` when results depend on external state that Quarto
 cannot detect; this bypasses stored results during preview renders.
-
-## Use on the same Wi-Fi network
-
-Listen on every network interface:
-
-```r
-server <- livecodeR::serve_file(
-  file = "example.R",
-  host = "0.0.0.0",
-  port = 3000
-)
-```
-
-When the server starts, it prints both the address for this computer and the
-network address to share, for example:
-
-```text
-Started streaming 'example.R' at http://127.0.0.1:3000
-Network URL: http://192.168.1.42:3000
-```
-
-You can retrieve the address again from R without using a terminal:
-
-```r
-livecodeR::local_ip()
-server$lan_url
-print(server)
-```
-
-`0.0.0.0` is a listening address, not an address to enter in a browser. The
-operating-system firewall must allow incoming connections to R on port 3000,
-and the router must allow devices to communicate with each other. Guest Wi-Fi
-networks commonly block this communication.
-
-## Manage the server
-
-```r
-server$is_running()
-server$restart()
-server$stop()
-
-livecodeR::list_servers()
-livecodeR::stop_all()
-```
-
-The browser normally receives updates over one persistent WebSocket connection.
-The server checks the file once and broadcasts changed content to all connected
-viewers. If a browser or tunnel cannot establish a WebSocket, it automatically
-falls back to revision-based HTTP polling at the configured `interval`, which
-defaults to 0.75 seconds.
